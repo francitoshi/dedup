@@ -1,0 +1,10 @@
+examples of dedup usage:
+
+ dedup backup
+ dedup -d backup
+ dedup -d --min-size=1m c:\\backup e:\\img
+ dedup -nd c:\\backup e:\\img
+ dedup -vn /opt/ /backup/tools
+ dedup -vvn /opt/ --exclude=/opt/nb6.7%FILE_PATH_SEPARATOR%/opt/nb6.8
+ dedup --byimage -znd photos
+

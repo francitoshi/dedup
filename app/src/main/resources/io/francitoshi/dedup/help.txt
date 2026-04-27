@@ -1,0 +1,61 @@
+dedup - finds and performs actions upon duplicate files
+
+USAGE: dedup [OPTIONS] [DIRECTORIES]
+
+OPTIONS:
+ -v, --verbose               increase verbosity
+ -V, --verbose-logger        format messages as a logger
+ -L, --license               display software license
+ -d, --delete                prompt user for files to delete
+     --delete-auto=path      smart auto-selection of files for deletion
+     --delete-1+             selection of 1,2,3,... files for deletion
+ -n, --noempty               exclude zero-length files
+ -s, --symlinks              follow symlinks
+ -m, --min-size=size         exclude files shorter than size[bkmgt]
+ -M, --max-size=size         exclude files larger than size[bkmgt]
+ -w, --min-wasted=size       minimum wasted size[bkmgt] copies, size*(n-1)
+ -S, --size                  show size[bkmgt] of files
+ -H, --nohide                ignore hide entries
+ -A, --absolute-path         show absolute path of files
+     --unique                list only unique files (--count=1)
+     --count=N               list files repeated N times  
+ -c, --min-count=N           files repeated at least N times
+ -C, --max-count=N           files repeated no more than N times
+     --noautoexclude         don't autoexclude some paths (/dev, /proc, ...)
+     --exclude=path          don't follow path
+     --exclude-dir=pattern   don't follow directories matching pattern
+     --exclude-file=pattern  ignore files matching pattern
+ -X, --exclude-rc-ide        ignore IDEs and RCs
+     --exclude-rc            ignore revision control directories
+     --exclude-svn           ignore subversion (.svn)
+     --exclude-cvs           ignore cvs (CVS)
+     --exclude-hg            ignore mercurial (.hg and .hgignore)
+     --exclude-git           ignore git (.git and .gitignore)
+     --exclude-ide           ignore .idea files
+     --exclude-idea          ignore Intellij IDEA .idea files
+     --exclude-nb            ignore NetBeans nb files
+     --exclude-eclipse       ignore Eclipse files
+ -f, --focus=path            focus on files in path
+     --focus-dir=pattern     focus on directories matching pattern
+     --focus-file=pattern    focus on files matching pattern
+     --dir=pattern           only directories matching pattern
+     --file=pattern          only files matching pattern
+ -z, --zip                   recurse into zip files (zip, jar, ...)(ALPHA)
+ -Z, --zip-only              exclude files not added by option --zip
+     --byname                compares by file name not content
+     --byiname               like --byname, but case insensitive
+     --byimage               compares images like humans (bmp,gif,jpg,jpeg,png)
+     --byimage-size=N        size of the gray NxN grid used in --byimage (64 by default)
+ -e, --regex                 uses java regular expresions
+     --wildcard              uses wildcards '*', '?' and '[]' (default)
+     --bug                   show filenames with bugs
+     --bug-fix               try to fix filenames with bugs
+     --version               print version number
+     --examples              print some useful examples
+(-h) --help                  show this help (-h works with no other options)
+
+Size units: 1=1b, 1k=1024b, 1m=1024k, 1g=1024m, 1t=1024g
+
+Separator character is: %FILE_PATH_SEPARATOR%
+
+Report bugs to: <francitoshi@gmail.com>

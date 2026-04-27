@@ -1,0 +1,61 @@
+dedup - Busca y realiza acciones sobre archivos duplicados
+
+USO: dedup [OPCIONES] [DIRECTORIOS]
+
+OPCIONES:
+ -v, --verbose               aumentar el nivel de detalle
+ -V, --verbose-logger        formatear mensajes como un logger
+ -L, --license               mostrar la licencia del software
+ -d, --delete                pedir al usuario los archivos a eliminar
+     --delete-auto=ruta      selección automática inteligente de archivos a eliminar
+     --delete-1+             selección de 1,2,3,... archivos para eliminar
+ -n, --noempty               excluir archivos de longitud cero
+ -s, --symlinks              seguir enlaces simbólicos
+ -m, --min-size=tamaño       excluir archivos menores que tamaño[bkmgt]
+ -M, --max-size=tamaño       excluir archivos mayores que tamaño[bkmgt]
+ -w, --min-wasted=tamaño     espacio mínimo desperdiciado[bkmgt] por copias, tamaño*(n-1)
+ -S, --size                  mostrar el tamaño[bkmgt] de los archivos
+ -H, --nohide                ignorar entradas ocultas
+ -A, --absolute-path         mostrar la ruta absoluta de los archivos
+     --unique                listar solo archivos únicos (--count=1)
+     --count=N               listar archivos repetidos N veces
+ -c, --min-count=N           archivos repetidos al menos N veces
+ -C, --max-count=N           archivos repetidos como máximo N veces
+     --noautoexclude         no excluir automáticamente algunas rutas (/dev, /proc, ...)
+     --exclude=ruta          no seguir la ruta
+     --exclude-dir=patrón    no seguir directorios que coincidan con el patrón
+     --exclude-file=patrón   ignorar archivos que coincidan con el patrón
+ -X, --exclude-rc-ide        ignorar IDEs y RCs
+     --exclude-rc            ignorar directorios de control de revisiones
+     --exclude-svn           ignorar subversion (.svn)
+     --exclude-cvs           ignorar cvs (CVS)
+     --exclude-hg            ignorar mercurial (.hg y .hgignore)
+     --exclude-git           ignorar git (.git y .gitignore)
+     --exclude-ide           ignorar archivos .idea
+     --exclude-idea          ignorar archivos .idea de Intellij IDEA
+     --exclude-nb            ignorar archivos nb de NetBeans
+     --exclude-eclipse       ignorar archivos de Eclipse
+ -f, --focus=ruta            centrarse en archivos en la ruta
+     --focus-dir=patrón      centrarse en directorios que coincidan con el patrón
+     --focus-file=patrón     centrarse en archivos que coincidan con el patrón
+     --dir=patrón            solo directorios que coincidan con el patrón
+     --file=patrón           solo archivos que coincidan con el patrón
+ -z, --zip                   explorar dentro de archivos zip (zip, jar, ...)(ALPHA)
+ -Z, --zip-only              excluir archivos no añadidos por la opción --zip
+     --byname                compara por nombre de archivo, no por contenido
+     --byiname               como --byname, pero sin distinción de mayúsculas
+     --byimage               compara imágenes como lo haría un humano (bmp,gif,jpg,jpeg,png)
+     --byimage-size=N        tamaño de la cuadrícula gris NxN usada en --byimage (64 por defecto)
+ -e, --regex                 usa expresiones regulares de Java
+     --wildcard              usa comodines '*', '?' y '[]' (por defecto)
+     --bug                   mostrar nombres de archivo con errores
+     --bug-fix               intentar corregir nombres de archivo con errores
+     --version               mostrar el número de versión
+     --examples              mostrar algunos ejemplos útiles
+(-h) --help                  mostrar esta ayuda (-h funciona sin otras opciones)
+
+Unidades de tamaño: 1=1b, 1k=1024b, 1m=1024k, 1g=1024m, 1t=1024g
+
+Carácter separador: %FILE_PATH_SEPARATOR%
+
+Reportar errores a: <francitoshi@gmail.com>
