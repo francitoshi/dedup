@@ -53,7 +53,7 @@ public class FileComparatorByImage implements Comparator<VirtualFile>
             {
                 return 0;
             }
-            Future<Integer> fa = hive.async(()->
+            Future<Integer> fa = hive.submit(()->
             {
                 try
                 {
@@ -65,7 +65,7 @@ public class FileComparatorByImage implements Comparator<VirtualFile>
                 }
             });
             
-            Future<Integer> fb = hive.async(()->
+            Future<Integer> fb = hive.submit(()->
             {
                 try
                 {

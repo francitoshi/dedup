@@ -190,7 +190,7 @@ public class DeDupHive implements Runnable
             }
             if((m = focusFilter(paths, dirsRegEx, filesRegEx, m))!=null)
             {
-                splitBee.send(m);
+                splitBee.accept(m);
             }
         }
         @Override
@@ -212,14 +212,14 @@ public class DeDupHive implements Runnable
         {
             if(halfCmp.equals(fullCmp))
             {
-                bucketMapBee.send(m);
+                bucketMapBee.accept(m);
             }
             else
             {
                 VirtualFile[][] list = Splitter.splitEquals(m,fullCmp);
                 for(VirtualFile[] items : list)
                 {
-                    bucketMapBee.send(items);
+                    bucketMapBee.accept(items);
                 }
             }
         }
@@ -254,7 +254,7 @@ public class DeDupHive implements Runnable
             }
             if((m=focusFilter(paths, dirsRegEx, filesRegEx, m))!=null)
             {
-                lowMemBee.send(m);
+                lowMemBee.accept(m);
             }
         }
         @Override
@@ -325,7 +325,7 @@ public class DeDupHive implements Runnable
 
             for (int i = 0; i < hashes.length; i++)
             {
-                minFocusBee.send(hashes[i]);
+                minFocusBee.accept(hashes[i]);
                 hashes[i] = null;
             }
             minFocusBee.shutdown(true);
