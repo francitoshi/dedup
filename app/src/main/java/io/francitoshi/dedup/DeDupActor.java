@@ -1,30 +1,16 @@
 /*
- *  DeDupHive.java
- *
- *  Copyright (C) 2009-2026 francitoshi@gmail.com
- *
- *  This program is free software: you can redistribute it and/or modify
- *  it under the terms of the GNU General Public License as published by
- *  the Free Software Foundation, either version 3 of the License, or
- *  (at your option) any later version.
- *
- *  This program is distributed in the hope that it will be useful,
- *  but WITHOUT ANY WARRANTY; without even the implied warranty of
- *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- *  GNU General Public License for more details.
- *
- *  You should have received a copy of the GNU General Public License
- *  along with this program.  If not, see <http://www.gnu.org/licenses/>.
- *
- *  Report bugs or new features to: francitoshi@gmail.com
+ * Copyright (C) 2009-2026 francitoshi@gmail.com
+ * SPDX-License-Identifier: GPL-3.0-or-later
+ * See LICENSE file in the project root for full license text.
  */
 package io.francitoshi.dedup;
 
 import io.nut.base.collections.IterableQueue;
 import io.nut.base.io.FileUtils;
 import io.nut.base.util.Splitter;
-import io.nut.base.util.concurrent.hive.Bee;
-import io.nut.base.util.concurrent.hive.Hive;
+import io.nut.base.util.concurrent.actor.Actor;
+import io.nut.base.util.concurrent.actor.ActorHub;
+import io.nut.base.util.concurrent.actor.ProxyActorHub;
 import io.nut.headless.io.virtual.VirtualFile;
 import java.io.File;
 import java.io.FileFilter;
@@ -39,7 +25,7 @@ import java.util.logging.Logger;
  *
  * @author franci
  */
-public class DeDupHive implements Runnable
+public class DeDupActor implements Runnable
 {
     private boolean lowmem=false;
 
@@ -55,7 +41,7 @@ public class DeDupHive implements Runnable
     private final Comparator<VirtualFile> halfCmp;
     private final Comparator<VirtualFile> fullCmp;
 
-    final Hive hive;
+    final ProxyActorHub hive = new ProxyActorHub();
     final File[] paths;
     final FileFilter[] dirsRegEx;
     final FileFilter[] filesRegEx;
@@ -63,9 +49,9 @@ public class DeDupHive implements Runnable
     final boolean wastedFilter;
     
 
-    public DeDupHive(Hive hive, File[] bases, boolean bugs, int bufSize, DeDupOptions opt)
+    public DeDupActor(ActorHub hive, File[] bases, boolean bugs, int bufSize, DeDupOptions opt)
     {
-        this.hive = hive;
+        this.hive.setActorHub(hive);
         this.bases = bases;
         this.bugs = bugs;
         this.options = opt;
@@ -148,7 +134,7 @@ public class DeDupHive implements Runnable
                     }
                     catch (IOException ex)
                     {
-                        Logger.getLogger(DeDupHive.class.getName()).log(Level.SEVERE, null, ex);
+                        Logger.getLogger(DeDupActor.class.getName()).log(Level.SEVERE, null, ex);
                     }
                 }
             }
@@ -175,7 +161,7 @@ public class DeDupHive implements Runnable
         return (full - min);
     }
 
-    final Bee<VirtualFile[]> minFocusBee = new Bee<>(Hive.CORES)
+    final Actor<VirtualFile[]> minFocusActor = new Actor<>(hive, ActorHub.CORES, ActorHub.CORES)
     {
         @Override
         protected void receive(VirtualFile[] m)
@@ -190,13 +176,13 @@ public class DeDupHive implements Runnable
             }
             if((m = focusFilter(paths, dirsRegEx, filesRegEx, m))!=null)
             {
-                splitBee.accept(m);
+                splitActor.accept(m);
             }
         }
         @Override
         protected void terminate()
         {
-            splitBee.shutdown(true);
+            splitActor.shutdown(true);
         }
         @Override
         protected void exception(Exception ex)
@@ -205,28 +191,28 @@ public class DeDupHive implements Runnable
             ex.printStackTrace(System.err);
         }
     };
-    final Bee<VirtualFile[]> splitBee = new Bee<>(Hive.CORES)
+    final Actor<VirtualFile[]> splitActor = new Actor<>(hive, ActorHub.CORES, ActorHub.CORES)
     {
         @Override
         protected void receive(VirtualFile[] m)
         {
             if(halfCmp.equals(fullCmp))
             {
-                bucketMapBee.accept(m);
+                bucketMapActor.accept(m);
             }
             else
             {
                 VirtualFile[][] list = Splitter.splitEquals(m,fullCmp);
                 for(VirtualFile[] items : list)
                 {
-                    bucketMapBee.accept(items);
+                    bucketMapActor.accept(items);
                 }
             }
         }
         @Override
         protected void terminate()
         {
-            bucketMapBee.shutdown(true);
+            bucketMapActor.shutdown(true);
         }
         @Override
         protected void exception(Exception ex)
@@ -235,7 +221,7 @@ public class DeDupHive implements Runnable
             ex.printStackTrace(System.err);
         }
     };
-    final Bee<VirtualFile[]> bucketMapBee = new Bee<>(Hive.CORES)
+    final Actor<VirtualFile[]> bucketMapActor = new Actor<>(hive, ActorHub.CORES, ActorHub.CORES)
     {
         @Override
         protected void receive(VirtualFile[] m)
@@ -254,13 +240,13 @@ public class DeDupHive implements Runnable
             }
             if((m=focusFilter(paths, dirsRegEx, filesRegEx, m))!=null)
             {
-                lowMemBee.accept(m);
+                lowMemActor.accept(m);
             }
         }
         @Override
         protected void terminate()
         {
-            lowMemBee.shutdown(true);
+            lowMemActor.shutdown(true);
         }
         @Override
         protected void exception(Exception ex)
@@ -269,7 +255,7 @@ public class DeDupHive implements Runnable
             ex.printStackTrace(System.err);
         }
     };
-    final Bee<VirtualFile[]> lowMemBee = new Bee<>(Hive.CORES)
+    final Actor<VirtualFile[]> lowMemActor = new Actor<>(hive, ActorHub.CORES, ActorHub.CORES)
     {
         @Override
         protected void receive(VirtualFile[] m)
@@ -289,7 +275,7 @@ public class DeDupHive implements Runnable
             }
             catch (CloneNotSupportedException | InterruptedException ex)
             {
-                Logger.getLogger(DeDupHive.class.getName()).log(Level.SEVERE, null, ex);
+                Logger.getLogger(DeDupActor.class.getName()).log(Level.SEVERE, null, ex);
             }
         }
         @Override
@@ -301,7 +287,7 @@ public class DeDupHive implements Runnable
             }
             catch (InterruptedException ex)
             {
-                Logger.getLogger(DeDupHive.class.getName()).log(Level.SEVERE, null, ex);
+                Logger.getLogger(DeDupActor.class.getName()).log(Level.SEVERE, null, ex);
             }
         }
         @Override
@@ -317,23 +303,21 @@ public class DeDupHive implements Runnable
     {
         try
         {
-            this.hive.add(minFocusBee, splitBee, bucketMapBee, lowMemBee);
-            
             final FileHashBySize fileHashBySize = new FileHashBySize(hive, bugs, bases, options, bugQueue, fileEof, halfCmp);
 
             VirtualFile[][] hashes = fileHashBySize.getFileHashBySize();
 
             for (int i = 0; i < hashes.length; i++)
             {
-                minFocusBee.accept(hashes[i]);
+                minFocusActor.accept(hashes[i]);
                 hashes[i] = null;
             }
-            minFocusBee.shutdown(true);
-            lowMemBee.awaitTermination(Integer.MAX_VALUE);
+            minFocusActor.shutdown(true);
+            lowMemActor.awaitTermination(Integer.MAX_VALUE);
         }
         catch (IOException | InterruptedException ex)
         {
-            Logger.getLogger(DeDupHive.class.getName()).log(Level.SEVERE, null, ex);
+            Logger.getLogger(DeDupActor.class.getName()).log(Level.SEVERE, null, ex);
         }
     }
 
@@ -347,9 +331,9 @@ public class DeDupHive implements Runnable
         return new IterableQueue(groupsQueue, filesEof);
     }
 
-    public void verbose(DeDupHive from, Level level, String msg, Exception ex)
+    public void verbose(DeDupActor from, Level level, String msg, Exception ex)
     {
-        Logger.getLogger(DeDupHive.class.getName()).log(level, msg, ex);
+        Logger.getLogger(DeDupActor.class.getName()).log(level, msg, ex);
     }
 
     public boolean isLowmem()

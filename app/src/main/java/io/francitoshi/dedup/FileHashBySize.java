@@ -8,9 +8,10 @@ package io.francitoshi.dedup;
 import io.nut.base.collections.bag.Bag;
 import io.nut.base.io.FileUtils;
 import io.nut.base.util.Concats;
-import io.nut.base.util.concurrent.hive.Bee;
-import io.nut.base.util.concurrent.hive.Hive;
-import io.nut.headless.io.ForEachFileBee;
+import io.nut.base.util.concurrent.actor.Actor;
+import io.nut.base.util.concurrent.actor.ActorHub;
+import io.nut.base.util.concurrent.actor.ProxyActorHub;
+import io.nut.headless.io.ForEachFileActor;
 import io.nut.headless.io.virtual.VirtualFile;
 import java.io.File;
 import java.io.FileFilter;
@@ -27,7 +28,7 @@ import java.util.logging.Logger;
  */
 public class FileHashBySize
 {
-    private final Hive hive;
+    private final ProxyActorHub hive = new ProxyActorHub();
     private final boolean bugs;
     
     private final File[] bases;
@@ -40,9 +41,9 @@ public class FileHashBySize
     
     final Bag<VirtualFile> sizeMap;
     
-    public FileHashBySize(Hive hive, boolean bugs, File[] bases, DeDupOptions options, BlockingQueue<File> bugQueue, File fileEof, Comparator<VirtualFile> halfCmp)
+    public FileHashBySize(ActorHub hive, boolean bugs, File[] bases, DeDupOptions options, BlockingQueue<File> bugQueue, File fileEof, Comparator<VirtualFile> halfCmp)
     {
-        this.hive = hive;
+        this.hive.setActorHub(hive);
         this.bugs = bugs;
         this.bases = bases;
         this.options = options;
@@ -53,7 +54,6 @@ public class FileHashBySize
         this.fileNameRegEx = options.getFileNames();
         this.sizeMap = Bag.synchronizedBag(Bag.create(halfCmp));
         
-        this.hive.add(readableBee, filterDirFileBee);
     }
     
     private boolean readable(VirtualFile item)
@@ -117,16 +117,16 @@ public class FileHashBySize
         }
         return true;
     }
-    final AtomicInteger readableBeeCount = new AtomicInteger();
-    final Bee<VirtualFile> readableBee = new Bee<>(Hive.CORES)
+    final AtomicInteger readableActorCount = new AtomicInteger();
+    final Actor<VirtualFile> readableActor = new Actor<>(hive, ActorHub.CORES, ActorHub.CORES)
     {
         @Override
         protected void receive(VirtualFile m)
         {
-            readableBeeCount.incrementAndGet();
+            readableActorCount.incrementAndGet();
             if(readable(m))
             {
-                filterDirFileBee.accept(m);
+                filterDirFileActor.accept(m);
             }
             else
             {
@@ -137,7 +137,7 @@ public class FileHashBySize
         @Override
         protected void terminate()
         {
-            filterDirFileBee.shutdown(true);
+            filterDirFileActor.shutdown(true);
         }
 
         @Override
@@ -149,13 +149,13 @@ public class FileHashBySize
         
     };
 
-    final AtomicInteger filterDirFileBeeCount = new AtomicInteger();
-    final Bee<VirtualFile> filterDirFileBee = new Bee<>(Hive.CORES)
+    final AtomicInteger filterDirFileActorCount = new AtomicInteger();
+    final Actor<VirtualFile> filterDirFileActor = new Actor<>(hive, ActorHub.CORES, ActorHub.CORES)
     {
         @Override
         protected void receive(VirtualFile m)
         {
-            filterDirFileBeeCount.incrementAndGet();
+            filterDirFileActorCount.incrementAndGet();
             if(filterDirFile(m, dirNameRegEx, fileNameRegEx))
             {
                 sizeMap.add(m);
@@ -165,7 +165,7 @@ public class FileHashBySize
         @Override
         protected void terminate()
         {
-            filterDirFileBee.shutdown(true);
+            filterDirFileActor.shutdown(true);
         }
         @Override
         protected void exception(Exception ex)
@@ -180,14 +180,12 @@ public class FileHashBySize
         final File[] basesAndFocus = Concats.cat(bases, options.getFocusPaths());
         //obtener ficheros en bruto
         
-        hive.add(readableBee,filterDirFileBee);
-        
-        ForEachFileBee foreach = new ForEachFileBee(basesAndFocus, options, readableBee,  true);
+        ForEachFileActor foreach = new ForEachFileActor(basesAndFocus, options, readableActor,  true);
         new Thread(foreach).start();
 
-        // wait until bees are alive to obtain all items for each bucket
-        readableBee.awaitTermination(Integer.MAX_VALUE);
-        filterDirFileBee.awaitTermination(Integer.MAX_VALUE);
+        // wait until actors are alive to obtain all items for each bucket
+        readableActor.awaitTermination(Integer.MAX_VALUE);
+        filterDirFileActor.awaitTermination(Integer.MAX_VALUE);
         bugQueue.put(fileEof);
                 
         // now each bucket is
