@@ -10,6 +10,7 @@ import io.nut.base.io.FileUtils;
 import io.nut.base.util.Splitter;
 import io.nut.base.util.concurrent.actor.Actor;
 import io.nut.base.util.concurrent.actor.ActorHub;
+import io.nut.base.util.concurrent.actor.MultiActor;
 import io.nut.base.util.concurrent.actor.ProxyActorHub;
 import io.nut.headless.io.virtual.VirtualFile;
 import java.io.File;
@@ -27,6 +28,8 @@ import java.util.logging.Logger;
  */
 public class DeDupActor implements Runnable
 {
+    static final int CORES = ActorHub.CORES;
+    
     private boolean lowmem=false;
 
     //añadir criterio para enlaces y archivos ocultos
@@ -41,7 +44,7 @@ public class DeDupActor implements Runnable
     private final Comparator<VirtualFile> halfCmp;
     private final Comparator<VirtualFile> fullCmp;
 
-    final ProxyActorHub hive = new ProxyActorHub();
+    final ProxyActorHub hub = new ProxyActorHub();
     final File[] paths;
     final FileFilter[] dirsRegEx;
     final FileFilter[] filesRegEx;
@@ -49,9 +52,9 @@ public class DeDupActor implements Runnable
     final boolean wastedFilter;
     
 
-    public DeDupActor(ActorHub hive, File[] bases, boolean bugs, int bufSize, DeDupOptions opt)
+    public DeDupActor(ActorHub hub, File[] bases, boolean bugs, int bufSize, DeDupOptions opt)
     {
-        this.hive.setActorHub(hive);
+        this.hub.setActorHub(hub);
         this.bases = bases;
         this.bugs = bugs;
         this.options = opt;
@@ -161,7 +164,7 @@ public class DeDupActor implements Runnable
         return (full - min);
     }
 
-    final Actor<VirtualFile[]> minFocusActor = new Actor<>(hive, ActorHub.CORES, ActorHub.CORES)
+    final Actor<VirtualFile[]> minFocusActor = new MultiActor<>(hub, CORES, CORES)
     {
         @Override
         protected void receive(VirtualFile[] m)
@@ -191,7 +194,7 @@ public class DeDupActor implements Runnable
             ex.printStackTrace(System.err);
         }
     };
-    final Actor<VirtualFile[]> splitActor = new Actor<>(hive, ActorHub.CORES, ActorHub.CORES)
+    final Actor<VirtualFile[]> splitActor = new MultiActor<>(hub, CORES, CORES)
     {
         @Override
         protected void receive(VirtualFile[] m)
@@ -221,7 +224,7 @@ public class DeDupActor implements Runnable
             ex.printStackTrace(System.err);
         }
     };
-    final Actor<VirtualFile[]> bucketMapActor = new Actor<>(hive, ActorHub.CORES, ActorHub.CORES)
+    final Actor<VirtualFile[]> bucketMapActor = new MultiActor<>(hub, CORES, CORES)
     {
         @Override
         protected void receive(VirtualFile[] m)
@@ -255,7 +258,7 @@ public class DeDupActor implements Runnable
             ex.printStackTrace(System.err);
         }
     };
-    final Actor<VirtualFile[]> lowMemActor = new Actor<>(hive, ActorHub.CORES, ActorHub.CORES)
+    final Actor<VirtualFile[]> lowMemActor = new MultiActor<>(hub, CORES, CORES)
     {
         @Override
         protected void receive(VirtualFile[] m)
@@ -303,7 +306,7 @@ public class DeDupActor implements Runnable
     {
         try
         {
-            final FileHashBySize fileHashBySize = new FileHashBySize(hive, bugs, bases, options, bugQueue, fileEof, halfCmp);
+            final FileHashBySize fileHashBySize = new FileHashBySize(hub, bugs, bases, options, bugQueue, fileEof, halfCmp);
 
             VirtualFile[][] hashes = fileHashBySize.getFileHashBySize();
 

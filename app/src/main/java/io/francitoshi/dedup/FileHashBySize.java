@@ -10,6 +10,7 @@ import io.nut.base.io.FileUtils;
 import io.nut.base.util.Concats;
 import io.nut.base.util.concurrent.actor.Actor;
 import io.nut.base.util.concurrent.actor.ActorHub;
+import io.nut.base.util.concurrent.actor.MultiActor;
 import io.nut.base.util.concurrent.actor.ProxyActorHub;
 import io.nut.headless.io.ForEachFileActor;
 import io.nut.headless.io.virtual.VirtualFile;
@@ -28,7 +29,9 @@ import java.util.logging.Logger;
  */
 public class FileHashBySize
 {
-    private final ProxyActorHub hive = new ProxyActorHub();
+    static final int CORES = ActorHub.CORES;
+    
+    private final ProxyActorHub hub = new ProxyActorHub();
     private final boolean bugs;
     
     private final File[] bases;
@@ -41,9 +44,9 @@ public class FileHashBySize
     
     final Bag<VirtualFile> sizeMap;
     
-    public FileHashBySize(ActorHub hive, boolean bugs, File[] bases, DeDupOptions options, BlockingQueue<File> bugQueue, File fileEof, Comparator<VirtualFile> halfCmp)
+    public FileHashBySize(ActorHub hub, boolean bugs, File[] bases, DeDupOptions options, BlockingQueue<File> bugQueue, File fileEof, Comparator<VirtualFile> halfCmp)
     {
-        this.hive.setActorHub(hive);
+        this.hub.setActorHub(hub);
         this.bugs = bugs;
         this.bases = bases;
         this.options = options;
@@ -118,7 +121,7 @@ public class FileHashBySize
         return true;
     }
     final AtomicInteger readableActorCount = new AtomicInteger();
-    final Actor<VirtualFile> readableActor = new Actor<>(hive, ActorHub.CORES, ActorHub.CORES)
+    final Actor<VirtualFile> readableActor = new MultiActor<>(hub, CORES, CORES)
     {
         @Override
         protected void receive(VirtualFile m)
@@ -150,7 +153,7 @@ public class FileHashBySize
     };
 
     final AtomicInteger filterDirFileActorCount = new AtomicInteger();
-    final Actor<VirtualFile> filterDirFileActor = new Actor<>(hive, ActorHub.CORES, ActorHub.CORES)
+    final Actor<VirtualFile> filterDirFileActor = new MultiActor<>(hub, ActorHub.CORES, ActorHub.CORES)
     {
         @Override
         protected void receive(VirtualFile m)

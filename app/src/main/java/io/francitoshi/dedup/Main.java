@@ -55,6 +55,8 @@ public class Main
         EXAMPLES_TXT = i18n.resolveResource("examples", "").replace("%FILE_PATH_SEPARATOR%",File.pathSeparator);
     }
      
+    static final int CORES = ActorHub.CORES;
+    
     /**
      * @param args the command line arguments
      * @throws java.lang.InterruptedException
@@ -191,7 +193,7 @@ public class Main
         long maxSizeValue = Long.MAX_VALUE;
         long minWastedValue = Long.MAX_VALUE;
             
-        try(ActorHub hive = new ActorHub(ActorHub.CORES*4, ActorHub.CORES*8, 30_000, false))
+        try(ActorHub hive = new ActorHub(CORES, CORES*8, 30_000, false))
         {
             if (minSize.isUsed())
             {
