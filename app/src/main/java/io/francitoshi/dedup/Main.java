@@ -20,7 +20,7 @@ import io.nut.base.options.NumberOption;
 import io.nut.base.options.OptionParser;
 import io.nut.base.options.SizeOption;
 import io.nut.base.resources.I18n;
-import io.nut.base.util.Concats;
+import io.nut.base.util.Joins;
 import io.nut.base.util.SizeUnits;
 import io.nut.base.util.Utils;
 import io.nut.base.util.concurrent.actor.ActorHub;
@@ -224,7 +224,7 @@ public class Main
                 autoDeleteFiles = FileUtils.getAbsoluteFile(FileUtils.toFileArray(deleteAuto.getValues()));
                 if (autoDeleteFiles.length > 0)
                 {
-                    files = Concats.cat(files, autoDeleteFiles);
+                    files = Joins.cat(files, autoDeleteFiles);
                 }
             }
 

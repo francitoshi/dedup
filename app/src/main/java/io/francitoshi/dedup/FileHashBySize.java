@@ -7,7 +7,7 @@ package io.francitoshi.dedup;
 
 import io.nut.base.collections.bag.Bag;
 import io.nut.base.io.FileUtils;
-import io.nut.base.util.Concats;
+import io.nut.base.util.Joins;
 import io.nut.base.util.concurrent.actor.Actor;
 import io.nut.base.util.concurrent.actor.ActorHub;
 import io.nut.base.util.concurrent.actor.MultiActor;
@@ -180,7 +180,7 @@ public class FileHashBySize
 
     VirtualFile[][] getFileHashBySize() throws IOException, InterruptedException
     {
-        final File[] basesAndFocus = Concats.cat(bases, options.getFocusPaths());
+        final File[] basesAndFocus = Joins.cat(bases, options.getFocusPaths());
         //obtener ficheros en bruto
         
         ForEachFileActor foreach = new ForEachFileActor(basesAndFocus, options, readableActor,  true);
