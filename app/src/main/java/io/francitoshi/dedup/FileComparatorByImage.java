@@ -5,7 +5,7 @@
  */
 package io.francitoshi.dedup;
 
-import io.nut.base.util.concurrent.actor.ActorHub;
+import io.nut.base.concurrent.actor.ActorHub;
 import io.nut.headless.image.hash.ImageClusterer;
 import io.nut.headless.io.virtual.VirtualFile;
 import java.io.IOException;
