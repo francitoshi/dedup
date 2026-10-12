@@ -235,10 +235,50 @@ jobs:
           path: build\installers\windows\
 
   # ──────────────────────────────────────────────────────────
+  # 3.5) GRAALVM NATIVE IMAGE — self-contained native executables
+  #      (available on Linux, macOS and Windows)
+  # ──────────────────────────────────────────────────────────
+  native-image:
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: ubuntu-latest
+            artifact: installers-native-linux
+          - os: macos-latest
+            artifact: installers-native-mac
+          - os: windows-latest
+            artifact: installers-native-windows
+
+    steps:
+      - name: Clone the repository
+        uses: actions/checkout@v4
+
+      - name: Setup GraalVM (bundled native-image)
+        uses: graalvm/setup-graalvm@v1
+        with:
+          java-version: '17'
+          distribution: 'graalvm'
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Setup Gradle (with cache)
+        uses: gradle/actions/setup-gradle@v4
+
+      - name: Build native image
+        run: ./gradlew :app:nativeCompile
+
+      - name: Upload native image
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ matrix.artifact }}
+          path: app/build/native/nativeCompile/
+
+  # ──────────────────────────────────────────────────────────
   # 4) RELEASE — Publish all installers on GitHub Releases
   # ──────────────────────────────────────────────────────────
   release:
-    needs: [package-linux, package-mac, package-windows]
+    needs: [package-linux, package-mac, package-windows, native-image]
     runs-on: ubuntu-latest
     if: startsWith(github.ref, 'refs/tags/')
     permissions:
@@ -268,6 +308,8 @@ jobs:
             | 🍎 macOS   | `.pkg`  | Silent/enterprise installation     |
             | 🪟 Windows | `.exe`  | Installation wizard                |
             | 🪟 Windows | `.msi`  | Enterprise/GPO installation        |
+            | ⚡ Native  | `dedup` | GraalVM native image (Linux/macOS) |
+            | ⚡ Native  | `.exe`  | GraalVM native image (Windows)     |
           files: |
             release/**/*
         env:
